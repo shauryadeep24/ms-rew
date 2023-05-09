@@ -11,7 +11,7 @@ permissions:
 jobs:
   burn_rewards:
     runs-on: ubuntu-latest
-    timeout-minutes: 36
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v3
       - name: Setting Up Actions
